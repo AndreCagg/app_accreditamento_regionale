@@ -9,6 +9,7 @@ import 'package:accreditamento/model/pratica.dart';
 import 'package:accreditamento/model/ragione_sociale.dart';
 import 'package:accreditamento/model/rappresentante_legale.dart';
 import 'package:accreditamento/model/sede.dart';
+import 'package:accreditamento/screen/pratica_detils.dart';
 import 'package:flutter/material.dart';
 import "package:http/http.dart" as http;
 
@@ -124,6 +125,16 @@ class _DettagliEnteState extends State<DettagliEnte> {
     }
 
     return null;
+  }
+
+  void exploraPratica(int id) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) {
+          return PraticaDetails(id: id);
+        },
+      ),
+    );
   }
 
   @override
@@ -262,7 +273,14 @@ class _DettagliEnteState extends State<DettagliEnte> {
                 Expanded(
                   child: ListView.builder(
                     itemCount: praticheElem.length,
-                    itemBuilder: (ctx, idx) => praticheElem[idx],
+                    itemBuilder: (ctx, idx) {
+                      return GestureDetector(
+                        onTap: () {
+                          exploraPratica(snapshot.data!.pratiche![idx].id);
+                        },
+                        child: praticheElem[idx],
+                      );
+                    },
                   ),
                 ),
 
