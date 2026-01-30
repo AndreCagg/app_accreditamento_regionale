@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:accreditamento/api/api_client.dart';
 import 'package:accreditamento/model/accreditamento.dart';
 import 'package:accreditamento/model/contatto.dart';
 import 'package:accreditamento/model/ente.dart';
@@ -9,9 +10,12 @@ import 'package:accreditamento/model/pratica.dart';
 import 'package:accreditamento/model/ragione_sociale.dart';
 import 'package:accreditamento/model/rappresentante_legale.dart';
 import 'package:accreditamento/model/sede.dart';
-import 'package:accreditamento/screen/pratica_detils.dart';
+import 'package:accreditamento/screen/pratica_details.dart';
 import 'package:flutter/material.dart';
 import "package:http/http.dart" as http;
+import 'package:intl/intl.dart';
+
+final api = ApiClient(baseUrl: "http://10.0.2.2:8080/api/v1.0");
 
 class DettagliEnte extends StatefulWidget {
   const DettagliEnte({super.key, required this.piva});
@@ -26,13 +30,14 @@ class DettagliEnte extends StatefulWidget {
 
 class _DettagliEnteState extends State<DettagliEnte> {
   late Future<EnteDetails?> _ente;
-  //late Future<List<Sede>?> _sedi;
   String _nomeEnte = "";
 
   Future<EnteDetails?> getEnteDetails() async {
-    http.Response response = await http.get(
+    /*http.Response response = await http.get(
       Uri.parse("http://10.0.2.2:8080/api/v1.0/ente/details/${widget.piva}"),
-    );
+    );*/
+
+    http.Response response = await api.get("/ente/details/${widget.piva}");
 
     if (response.statusCode == 200) {
       Map<String, dynamic> raw = jsonDecode(response.body);
@@ -45,45 +50,57 @@ class _DettagliEnteState extends State<DettagliEnte> {
 
       List<RagioneSociale> ragioniSociali = [];
       dRagioniSociali.forEach((r) {
-        ragioniSociali.add(
-          RagioneSociale(
-            id: r["id"] as int,
-            ragioneSociale: r["ragioneSociale"] as String,
-            dal: DateTime.parse(r["dal"]),
-            finoAl: r["finoAl"] != null ? DateTime.parse(r["finoAl"]) : null,
-          ),
-        );
+        if (r != null) {
+          ragioniSociali.add(
+            RagioneSociale(
+              id: r["id"] as int,
+              ragioneSociale: r["ragioneSociale"] as String,
+              dal: DateTime.parse(r["dal"]),
+              finoAl: r["finoAl"] != null ? DateTime.parse(r["finoAl"]) : null,
+            ),
+          );
+        }
       });
 
       List<RappresentanteLegale> rappresentantiLegali = [];
       dRappresentantiLegali.forEach((r) {
-        rappresentantiLegali.add(
-          RappresentanteLegale(
-            codFisc: r["codFisc"] as String,
-            cognome: r["cognome"] as String,
-            nome: r["nome"] as String,
-            dal: DateTime.parse(r["dal"]),
-            finoAl: r["finoAl"] != null ? DateTime.parse(r["finoAl"]) : null,
-          ),
-        );
+        if (r != null) {
+          rappresentantiLegali.add(
+            RappresentanteLegale(
+              codFisc: r["codFisc"] as String,
+              cognome: r["cognome"] as String,
+              nome: r["nome"] as String,
+              dal: DateTime.parse(r["dal"]),
+              finoAl: r["finoAl"] != null ? DateTime.parse(r["finoAl"]) : null,
+            ),
+          );
+        }
       });
 
       List<Sede> sedi = [];
       dSedi.forEach((s) {
-        Contatto c = Contatto(
-          contatto: s["contatto"]["contatto"] as String,
-          idContatto: s["contatto"]["idContatto"] as int,
-        );
+        if (s != null) {
+          Contatto? c;
+          Indirizzo? i;
+          if (s["contatto"] != null) {
+            c = Contatto(
+              contatto: s["contatto"]["contatto"] as String,
+              idContatto: s["contatto"]["idContatto"] as int,
+            );
+          }
 
-        Indirizzo i = Indirizzo(
-          dal: DateTime.parse(s["indirizzo"]["dal"]),
-          finoAl: s["indirizzo"]["finoAl"] != null
-              ? DateTime.parse(s["indirizzo"]["finoAl"])
-              : null,
-          indirizzo: s["indirizzo"]["indirizzo"] as String,
-        );
+          if (s["indirizzo"] != null) {
+            i = Indirizzo(
+              dal: DateTime.parse(s["indirizzo"]["dal"]),
+              finoAl: s["indirizzo"]["finoAl"] != null
+                  ? DateTime.parse(s["indirizzo"]["finoAl"])
+                  : null,
+              indirizzo: s["indirizzo"]["indirizzo"] as String,
+            );
+          }
 
-        sedi.add(Sede(contatto: c, indirizzo: i, idSede: s["idSede"]));
+          sedi.add(Sede(contatto: c, indirizzo: i, idSede: s["idSede"]));
+        }
       });
 
       List<Pratica> pratiche = [];
@@ -95,6 +112,7 @@ class _DettagliEnteState extends State<DettagliEnte> {
             formazione: p["formazione"] as String,
             idSede: p["idSede"] as int,
             stato: p["stato"] as String,
+            indirizzoSede: "",
             tipoPratica: p["tipoPratica"] as String,
           ),
         );
@@ -120,7 +138,6 @@ class _DettagliEnteState extends State<DettagliEnte> {
         pratiche: pratiche,
         accreditamenti: accreditamenti,
       );
-      print("ciaiai");
       return e;
     }
 
@@ -166,15 +183,17 @@ class _DettagliEnteState extends State<DettagliEnte> {
                 List<Widget> wRagioniSociali = [];
 
                 ragioniSociali.forEach((rs) {
-                  wRagioniSociali.add(
-                    ListTile(
-                      leading: Icon(Icons.donut_large_rounded),
-                      title: Text(rs.ragioneSociale),
-                      subtitle: Text(
-                        "${rs.dal} - ${rs.finoAl ?? "ancora vigente"}",
+                  if (rs.ragioneSociale != null) {
+                    wRagioniSociali.add(
+                      ListTile(
+                        leading: Icon(Icons.donut_large_rounded),
+                        title: Text(rs.ragioneSociale),
+                        subtitle: Text(
+                          "${DateFormat("dd/MM/yyyy").format(rs.dal)} - ${rs.finoAl != null ? DateFormat("dd/MM/yyyy").format(rs.finoAl!) : "ancora vigente"}",
+                        ),
                       ),
-                    ),
-                  );
+                    );
+                  }
                 });
 
                 children.add(
@@ -193,6 +212,9 @@ class _DettagliEnteState extends State<DettagliEnte> {
                     ListTile(
                       leading: Icon(Icons.donut_large_rounded),
                       title: Text("${rl.codFisc} - ${rl.cognome} ${rl.nome}"),
+                      subtitle: Text(
+                        "${DateFormat("dd/MM/yyyy").format(rl.dal)} - ${rl.finoAl != null ? DateFormat("dd/MM/yyyy").format(rl.finoAl!) : "ancora vigente"}",
+                      ),
                     ),
                   );
                 });
@@ -210,12 +232,22 @@ class _DettagliEnteState extends State<DettagliEnte> {
 
                   sedi.forEach((s) {
                     if (s.indirizzo != null) {
-                      wSedi.add(
-                        ListTile(
-                          leading: Icon(Icons.donut_large_rounded),
-                          title: Text("${s.indirizzo!.indirizzo}"),
-                        ),
-                      );
+                      if (s.contatto != null) {
+                        wSedi.add(
+                          ListTile(
+                            leading: Icon(Icons.donut_large_rounded),
+                            title: Text("${s.indirizzo!.indirizzo}"),
+                            subtitle: Text("${s.contatto!.contatto}"),
+                          ),
+                        );
+                      } else {
+                        wSedi.add(
+                          ListTile(
+                            leading: Icon(Icons.donut_large_rounded),
+                            title: Text("${s.indirizzo!.indirizzo}"),
+                          ),
+                        );
+                      }
                     }
                   });
 
@@ -250,7 +282,7 @@ class _DettagliEnteState extends State<DettagliEnte> {
                           "Prot: ${acc.id}\nPratica ${acc.idPratica}",
                         ),
                         subtitle: Text(
-                          "${acc.dataInizio} - ${acc.dataScadenza}",
+                          "${DateFormat("dd/MM/yyyy").format(acc.dataInizio)} - ${DateFormat("dd/MM/yyyy").format(acc.dataScadenza)}",
                         ),
                       ),
                     );

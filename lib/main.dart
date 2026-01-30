@@ -1,6 +1,6 @@
+import 'package:accreditamento/screen/login.dart';
 import 'package:flutter/material.dart';
-import "package:accreditamento/screen/welcome.dart";
 
 void main() {
-  runApp(MaterialApp(home: Welcome()));
+  runApp(MaterialApp(home: Login()));
 }

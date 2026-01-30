@@ -4,6 +4,7 @@ class Pratica {
     required this.descrizione,
     required this.formazione,
     required this.idSede,
+    required this.indirizzoSede,
     required this.stato,
     required this.tipoPratica,
   });
@@ -12,6 +13,7 @@ class Pratica {
   final String descrizione;
   final String formazione;
   final int idSede;
+  final String indirizzoSede;
   final String stato;
   final String tipoPratica;
 }

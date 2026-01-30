@@ -1,3 +1,6 @@
+import 'package:accreditamento/screen/crea_ente.dart';
+import 'package:accreditamento/screen/crea_rapp_legale.dart';
+import 'package:accreditamento/screen/pratiche_disponibili.dart';
 import 'package:flutter/material.dart';
 import "package:accreditamento/screen/enti_disponibili.dart";
 
@@ -23,6 +26,12 @@ class _WelcomeState extends State<Welcome> {
     switch (page) {
       case "visualizza-enti":
         navigate(EntiDisponibili());
+      case "crea-ente":
+        navigate(CreaEnte());
+      case "crea-rapplegale":
+        navigate(CreaRappLegale());
+      case "leggi-pratiche":
+        navigate(PraticheDisponibili());
     }
   }
 
@@ -40,10 +49,31 @@ class _WelcomeState extends State<Welcome> {
               },
               title: Text("Visualizza enti"),
             ),
+            ListTile(
+              onTap: () {
+                openPage("crea-ente");
+              },
+              title: Text("Crea ente"),
+            ),
+            ListTile(
+              onTap: () {
+                openPage("crea-rapplegale");
+              },
+              title: Text("Crea rappresentante legale"),
+            ),
+            ListTile(
+              onTap: () {
+                openPage("leggi-pratiche");
+              },
+              title: Text("Pratiche disponibili"),
+            ),
           ],
         ),
       ),
-      body: Padding(padding: EdgeInsetsGeometry.all(20), child: Text("ciao")),
+      body: Padding(
+        padding: EdgeInsetsGeometry.all(20),
+        child: Text("Utilizza il menù laterale"),
+      ),
     );
   }
 }

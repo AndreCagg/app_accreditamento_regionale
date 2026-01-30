@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:accreditamento/api/api_client.dart';
 import 'package:accreditamento/model/contatto.dart';
 import 'package:accreditamento/model/indirizzo.dart';
 import 'package:accreditamento/model/pratica_details_model.dart';
@@ -7,6 +8,8 @@ import 'package:accreditamento/model/requisiti_accreditamento.dart';
 import 'package:accreditamento/model/sede.dart';
 import 'package:flutter/material.dart';
 import "package:http/http.dart" as http;
+
+final api = ApiClient(baseUrl: "http://10.0.2.2:8080/api/v1.0");
 
 class PraticaDetails extends StatefulWidget {
   const PraticaDetails({super.key, required this.id});
@@ -22,15 +25,20 @@ class _PraticaDetailsState extends State<PraticaDetails> {
   late Future<PraticaDetailsModel?> pratica;
 
   void aggiornaPratica(String action) async {
-    http.Response response = await http.patch(
+    /*http.Response response = await http.patch(
       Uri.parse("http://10.0.2.2:8080/api/v1.0/pratica/${action}/${widget.id}"),
-    );
+    );*/
+
+    http.Response response = await api.patch("/pratica/${action}/${widget.id}");
 
     if (response.statusCode == 200) {
       ScaffoldMessenger.of(context).clearSnackBars();
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text("Pratica aggiornata")));
+      setState(() {
+        pratica = getRequisiti(widget.id);
+      });
     } else {
       ScaffoldMessenger.of(context).clearSnackBars();
       ScaffoldMessenger.of(context).showSnackBar(
@@ -44,9 +52,11 @@ class _PraticaDetailsState extends State<PraticaDetails> {
   Future<PraticaDetailsModel?> getRequisiti(int id) async {
     List<RequisitiAccreditamento> requisiti = [];
 
-    http.Response response = await http.get(
+    /*http.Response response = await http.get(
       Uri.parse("http://10.0.2.2:8080/api/v1.0/pratica/${id}"),
-    );
+    );*/
+
+    http.Response response = await api.get("/pratica/${id}");
 
     if (response.statusCode == 200) {
       Map<String, dynamic> map = jsonDecode(response.body);
@@ -62,25 +72,32 @@ class _PraticaDetailsState extends State<PraticaDetails> {
         );
       });
 
+      Contatto? c;
+      if (map["sede"]["contatto"] != null) {
+        c = Contatto(
+          contatto: map["sede"]["contatto"]["contatto"] as String,
+          idContatto: map["sede"]["contatto"]["idContatto"] as int,
+        );
+      }
+
+      Indirizzo? i;
+      if (map["sede"]["indirizzo"] != null) {
+        i = Indirizzo(
+          dal: DateTime.parse(map["sede"]["indirizzo"]["dal"]),
+          finoAl: map["sede"]["indirizzo"]["finoAl"] != null
+              ? DateTime.parse(map["sede"]["indirizzo"]["finoAl"])
+              : null,
+          indirizzo: map["sede"]["indirizzo"]["indirizzo"] as String,
+        );
+      }
+
       PraticaDetailsModel p = PraticaDetailsModel(
         id: map["id"] as int,
         formazione: map["formazione"] as String,
         descrizione: map["descrizione"] as String,
         idSede: map["idSede"] as int,
-        sede: Sede(
-          idSede: map["idSede"] as int,
-          contatto: Contatto(
-            contatto: map["sede"]["contatto"]["contatto"] as String,
-            idContatto: map["sede"]["contatto"]["idContatto"] as int,
-          ),
-          indirizzo: Indirizzo(
-            dal: DateTime.parse(map["sede"]["indirizzo"]["dal"]),
-            finoAl: map["sede"]["indirizzo"]["finoAl"] != null
-                ? DateTime.parse(map["sede"]["indirizzo"]["finoAl"])
-                : null,
-            indirizzo: map["sede"]["indirizzo"]["indirizzo"] as String,
-          ),
-        ),
+        indirizzoSede: "",
+        sede: Sede(idSede: map["idSede"] as int, contatto: c, indirizzo: i),
         stato: map["stato"] as String,
         tipoPratica: map["tipoPratica"] as String,
         requisiti: requisiti,
@@ -138,6 +155,7 @@ class _PraticaDetailsState extends State<PraticaDetails> {
                         child: Text("Avvia istruttoria"),
                       ),
                     );
+                    break;
                   case "In istruttoria":
                     actions.addAll([
                       FilledButton(
@@ -153,6 +171,7 @@ class _PraticaDetailsState extends State<PraticaDetails> {
                         child: Text("Respingi"),
                       ),
                     ]);
+                    break;
                   case "Approvata":
                     actions.add(
                       FilledButton(
@@ -162,6 +181,7 @@ class _PraticaDetailsState extends State<PraticaDetails> {
                         child: Text("Revoca"),
                       ),
                     );
+                    break;
                   case "Respinta":
                     actions.add(
                       FilledButton(
@@ -171,6 +191,7 @@ class _PraticaDetailsState extends State<PraticaDetails> {
                         child: Text("Approva"),
                       ),
                     );
+                    break;
                   case "Revocata":
                     actions.add(
                       FilledButton(
@@ -180,6 +201,7 @@ class _PraticaDetailsState extends State<PraticaDetails> {
                         child: Text("Approva"),
                       ),
                     );
+                    break;
                 }
 
                 child = Center(
@@ -188,7 +210,7 @@ class _PraticaDetailsState extends State<PraticaDetails> {
                     children: [
                       ListTile(
                         leading: Icon(Icons.notes),
-                        title: Text(details.descrizione),
+                        title: Text("Note: ${details.descrizione}"),
                       ),
                       ListTile(
                         leading: Icon(Icons.school),
@@ -223,6 +245,8 @@ class _PraticaDetailsState extends State<PraticaDetails> {
                     ],
                   ),
                 );
+              } else {
+                child = Text("Nessuna informazione disponibile");
               }
             }
 

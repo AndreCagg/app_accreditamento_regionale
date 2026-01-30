@@ -8,6 +8,7 @@ class PraticaDetailsModel extends Pratica {
     required super.formazione,
     required super.descrizione,
     required super.idSede,
+    required super.indirizzoSede,
     required super.stato,
     required super.tipoPratica,
     required this.sede,
